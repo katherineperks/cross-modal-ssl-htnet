@@ -383,7 +383,7 @@ def set_n_mod_args(args_in):
         dict_out['arch'] = dict_out['arch'][i]
         dict_out['imagenet_path'] = dict_out['imagenet_path'][i]
         dict_out['use_ecog'] = dict_out['use_ecog'][i]
-    return args_lst
+    return args_lst # TODO: dict_out not used?
 
 def create_ylabel(measure, traintest):
     if measure == 'acc':

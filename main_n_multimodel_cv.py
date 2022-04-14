@@ -360,7 +360,7 @@ if __name__ == "__main__":
                                        n_chans_all=140, test_day=None,
                                        tlim=[args_lst[i].t_min, args_lst[i].t_max])
         X1[np.isnan(X1)] = 0 # set all NaN's to 0
-        y1 -= y1.min()
+        y1 -= y1.min() # TODO: what does y1 labels look like?
         y1 = y1.astype('int')
         
         X.append(X1)
@@ -387,7 +387,7 @@ if __name__ == "__main__":
     
     homogsc, completesc, vscore, adjmi, adjrandsc = accs.copy(), accs.copy(), accs.copy(), accs.copy(), accs.copy()
     for i, inds in enumerate(splits):
-        train_inds, test_inds = inds
+        train_inds, test_inds = inds # TODO: assigned to same inds?
         
         # Standardize data and create dataloader
         scalings = 'median'
@@ -424,7 +424,7 @@ if __name__ == "__main__":
         o_models = optimize(o_lst)
 
         # Compute model train/test accuracy
-        for j, o_curr in enumerate(o_lst):
+        for j, o_curr in enumerate(o_lst): # TODO: why o_lst, not o_models?
             accs[j, i, 0], D_curr, sklsvm_in_curr = model_acc(o_curr.model, train_loader[j])
             accs[j, i, 1], _, _ = model_acc(o_curr.model, test_loader[j], sklsvm_in_curr, D=D_curr)
 
