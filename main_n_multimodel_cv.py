@@ -26,7 +26,7 @@ from sklearn import svm
 from copy import deepcopy
 from sklearn.model_selection import StratifiedKFold, LeaveOneOut
 
-import files
+#import files # TODO: seems unecessary here; found in https://github.com/yukimasano/self-label
 import util
 import sinkhornknopp_multi as sk
 from data import return_model_loader, get_htnet_data_loader, SimpleDataset, load_data
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     X, y = [], []
     n_modalities = len(args_lst)
     for i in range(n_modalities):
-        X1, y1, _, _, _, _ = load_data(args_lst[i].pat_id, args_lst[i].imagenet_path+'/',
+        X1, y1, _, _, _, _ = load_data(args_lst[i].pat_id, args_lst[i].imagenet_path,
                                        n_chans_all=140, test_day=None,
                                        tlim=[args_lst[i].t_min, args_lst[i].t_max])
         X1[np.isnan(X1)] = 0 # set all NaN's to 0
@@ -410,7 +410,7 @@ if __name__ == "__main__":
         
             # Setup models
             model_curr, _, Chans1, Samples1, params_curr = return_model_loader(args_lst[j])
-            model_curr.to(torch.device("cuda"))
+            model_curr.to(torch.device("cuda" if torch.cuda.is_available() else "cpu")) # TODO: for local execution
             summary(model_curr, input_size=(1, Chans1, Samples1))
             params.append(params_curr)
 

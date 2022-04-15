@@ -2,11 +2,11 @@
 # Test cross-modal deep clustering on ECoG move/rest dataset
 # (modified from from https://github.com/yukimasano/self-label)
 device="0"
-DIR='.../ecog_move_rest/ .../ecog_move_rest/pose/'
+DIR='./data/ecog_move_rest/ ./data/ecog_move_rest/pose/'
 subjects='EC01' #EC02 EC03 EC04 EC05 EC06 EC07 EC08 EC09 EC10 EC11 EC12'
 run_num=1
-savepath=.../xdc_runs/naturalistic
-param_lp=../models/naturalistic  # model parameter file to use
+savepath=./xdc_runs/naturalistic
+param_lp=./models/naturalistic  # model parameter file to use
 
 # the network
 ARCH='htnet htnet'
@@ -30,7 +30,7 @@ nopts=50 # number of times to update pseudo-labels
 
 for SBJ in $subjects
 do
-    python3 main_n_multimodel_cv.py \
+    python main_n_multimodel_cv.py \
             --device ${device} \
             --imagenet-path ${DIR} \
             --batch-size ${BS} \

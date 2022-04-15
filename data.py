@@ -318,9 +318,10 @@ def load_data(pats_ids_in, lp, n_chans_all=64, test_day=None, tlim=[-1,1], event
         pats_ids_in = [pats_ids_in]
     sbj_order,sbj_order_test = [],[]
     X_test_subj,y_test_subj = [],[] #placeholder vals
-        
-    #Gather each subjects data, and concatenate all days
+       
+    # Gather each subjects data, and concatenate all days
     fID = natsort.natsorted(glob.glob(lp+pats_ids_in[0]+'*_data.nc'))[0]
+    print(fID, flush=True)
     ep_data_in = xr.open_dataset(fID)
     if 'events' not in ep_data_in['__xarray_dataarray_variable__'].dims:
         # Case for loading Kai's data
@@ -446,19 +447,19 @@ def load_data(pats_ids_in, lp, n_chans_all=64, test_day=None, tlim=[-1,1], event
                     X_pad[:,:n_ecog_chans,...] = dat_test
                     dat_test = X_pad.copy()
             
-            # Remove bad electrodes for single subjects
-            if (len(pats_ids_in) == 1) and (fID.split('_')[-2] == 'ecog'):
-                # Load param file from pre-trained model
-                file_pkl = open(lp+'/proj_mat/bad_ecog_electrodes.pkl', 'rb') # TODO: where does this file come from?
-                bad_elecs_ecog = pickle.load(file_pkl)
-                file_pkl.close()
-                pat_ind = int(pat_curr[-2:])-1
-                inds2drop = bad_elecs_ecog[pat_ind]
+            # # Remove bad electrodes for single subjects
+            # if (len(pats_ids_in) == 1) and (fID.split('_')[-2] == 'ecog'):
+            #     # Load param file from pre-trained model
+            #     file_pkl = open(lp+'proj_mat/bad_ecog_electrodes.pkl', 'rb') # TODO: file exists on server: /data1/users/stepeter/xdc_data/ecog_nat/proj_mat
+            #     bad_elecs_ecog = pickle.load(file_pkl)
+            #     file_pkl.close()
+            #     pat_ind = int(pat_curr[-2:])-1
+            #     inds2drop = bad_elecs_ecog[pat_ind]
                 
-                indskeep = np.setdiff1d(np.arange(n_chans_curr),inds2drop)
-                dat_train = dat_train[:,indskeep,:]
-                if test_day is not None:
-                    dat_test = dat_test[:,indskeep,:]
+            #     indskeep = np.setdiff1d(np.arange(n_chans_curr),inds2drop)
+            #     dat_train = dat_train[:,indskeep,:]
+            #     if test_day is not None:
+            #         dat_test = dat_test[:,indskeep,:]
             
             #Concatenate across subjects
             if j==0:
