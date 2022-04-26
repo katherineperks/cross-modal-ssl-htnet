@@ -2,7 +2,7 @@
 # Test cross-modal deep clustering on ECoG move/rest dataset
 # (modified from from https://github.com/yukimasano/self-label)
 device="0"
-DIR='./data/ecog_move_rest/ ./data/ecog_move_rest/pose/'
+DIR='/data2/users/kperks/ecog_move_rest/ /data2/users/kperks/ecog_move_rest/pose/'
 subjects='EC01' #EC02 EC03 EC04 EC05 EC06 EC07 EC08 EC09 EC10 EC11 EC12'
 run_num=1
 savepath=./xdc_runs/naturalistic

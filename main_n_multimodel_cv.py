@@ -410,7 +410,7 @@ if __name__ == "__main__":
         
             # Setup models
             model_curr, _, Chans1, Samples1, params_curr = return_model_loader(args_lst[j])
-            model_curr.to(torch.device("cuda" if torch.cuda.is_available() else "cpu")) # TODO: for local execution
+            model_curr.to(torch.device("cuda"))
             summary(model_curr, input_size=(1, Chans1, Samples1))
             params.append(params_curr)
 
