@@ -321,8 +321,8 @@ def get_parser():
     
     parser.add_argument('--use_ecog', nargs='+', type=str2bool, required=False,
                         help='parameter switch for model (default: True)')
-    parser.add_argument('--t_min', default=-1, type=int, help='Start time of epoch')
-    parser.add_argument('--t_max', default=1, type=int, help='End time of epoch')
+    parser.add_argument('--t_min', default=-1, type=float, help='Start time of epoch')
+    parser.add_argument('--t_max', default=1, type=float, help='End time of epoch')
     parser.add_argument('--rescale_rate1', default=0, type=float, help='Percentage of data to randomly rescale (model 1)')
     parser.add_argument('--rescale_rate2', default=0, type=float, help='Percentage of data to randomly rescale (model 2)')
     parser.add_argument('--cont_data', type=str2bool, nargs='?', required=False,
@@ -360,7 +360,7 @@ if __name__ == "__main__":
                                        n_chans_all=140, test_day=None,
                                        tlim=[args_lst[i].t_min, args_lst[i].t_max])
         X1[np.isnan(X1)] = 0 # set all NaN's to 0
-        y1 -= y1.min() # TODO: what does y1 labels look like?
+        y1 -= y1.min()
         y1 = y1.astype('int')
         
         X.append(X1)
@@ -387,7 +387,7 @@ if __name__ == "__main__":
     
     homogsc, completesc, vscore, adjmi, adjrandsc = accs.copy(), accs.copy(), accs.copy(), accs.copy(), accs.copy()
     for i, inds in enumerate(splits):
-        train_inds, test_inds = inds # TODO: assigned to same inds?
+        train_inds, test_inds = inds
         
         # Standardize data and create dataloader
         scalings = 'median'
@@ -410,7 +410,7 @@ if __name__ == "__main__":
         
             # Setup models
             model_curr, _, Chans1, Samples1, params_curr = return_model_loader(args_lst[j])
-            model_curr.to(torch.device("cuda"))
+            model_curr.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
             summary(model_curr, input_size=(1, Chans1, Samples1))
             params.append(params_curr)
 

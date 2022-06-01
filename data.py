@@ -400,7 +400,7 @@ def load_data(pats_ids_in, lp, n_chans_all=64, test_day=None, tlim=[-1,1], event
             else:
                 test_day_curr = test_day
 
-            days_all_in = np.asarray(ep_data_in.events) # TODO: can sample subset of events [0:100]
+            days_all_in = np.asarray(ep_data_in.events)
 
             if test_day is None:
                 #No test output here
@@ -447,19 +447,19 @@ def load_data(pats_ids_in, lp, n_chans_all=64, test_day=None, tlim=[-1,1], event
                     X_pad[:,:n_ecog_chans,...] = dat_test
                     dat_test = X_pad.copy()
             
-            # Remove bad electrodes for single subjects
-            if (len(pats_ids_in) == 1) and (fID.split('_')[-2] == 'ecog'):
-                # Load param file from pre-trained model
-                file_pkl = open(lp+'proj_mat/bad_ecog_electrodes.pkl', 'rb') # lp = /data2/users/kperks/ecog_move_rest/
-                bad_elecs_ecog = pickle.load(file_pkl)
-                file_pkl.close()
-                pat_ind = int(pat_curr[-2:])-1
-                inds2drop = bad_elecs_ecog[pat_ind]
+            # # Remove bad electrodes for single subjects
+            # if (len(pats_ids_in) == 1) and (fID.split('_')[-2] == 'ecog'):
+            #     # Load param file from pre-trained model
+            #     file_pkl = open(lp+'proj_mat/bad_ecog_electrodes.pkl', 'rb') # lp = /data2/users/kperks/ecog_move_rest/
+            #     bad_elecs_ecog = pickle.load(file_pkl)
+            #     file_pkl.close()
+            #     pat_ind = int(pat_curr[-2:])-1
+            #     inds2drop = bad_elecs_ecog[pat_ind]
                 
-                indskeep = np.setdiff1d(np.arange(n_chans_curr),inds2drop)
-                dat_train = dat_train[:,indskeep,:]
-                if test_day is not None:
-                    dat_test = dat_test[:,indskeep,:]
+            #     indskeep = np.setdiff1d(np.arange(n_chans_curr),inds2drop)
+            #     dat_train = dat_train[:,indskeep,:]
+            #     if test_day is not None:
+            #         dat_test = dat_test[:,indskeep,:]
             
             #Concatenate across subjects
             if j==0:
