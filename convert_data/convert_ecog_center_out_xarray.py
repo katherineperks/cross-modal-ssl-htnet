@@ -20,6 +20,16 @@ pose = data['mocap']
 recording_day = data['events']
 times = data['time']
 
+# Randomize epoch order - INCLUDED FOR RUN 8 ONWARDS
+order_inds = np.arange(ecog.shape[0])
+np.random.shuffle(order_inds)
+ecog = ecog[order_inds,...]
+pose = pose[order_inds,...]
+recording_day = (np.asarray(recording_day)[order_inds]).tolist()
+
+# Check if labels are still the same between ECoG and pose data
+assert (ecog[:, -1, 0].squeeze() == pose[:, -1, 0].squeeze()).all()
+
 # Convert ECoG to xarray and save
 da_ecog = xr.DataArray(ecog,
                     [('events', recording_day),
