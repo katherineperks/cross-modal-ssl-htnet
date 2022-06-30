@@ -10,7 +10,14 @@ from statannot import add_stat_annotation
 def load_dataset_params(dataset):
     n_cls, row_labels, group_labels, sbjs_all = None, None, None, None
     n_modspair = 2
-    if dataset == 'eeg_balance':
+    if dataset == 'center_out':
+        n_cls = 8
+        row_labels = ['ECoG ', 'Pose ']
+        group_labels = np.array(['Supervised', 'Supervised',
+                                 'Unimodal', 'Unimodal',
+                                 'Cross-modal\n(with pose)', 'Cross-modal\n(with ECoG)'])
+        sbjs_all = ['BEIG0414','BEIG0414a','BEIG0414b']
+    elif dataset == 'eeg_balance':
         n_cls = 4
         row_labels = ['EEG ', 'Pose ', 'EMG ']
         group_labels = np.array(['Supervised', 'Supervised', 'Supervised',
@@ -24,11 +31,12 @@ def load_dataset_params(dataset):
     elif dataset == 'naturalistic':
         n_cls = 2
         row_labels = ['ECoG ', 'Pose ']
-        group_labels = np.array(['Supervised', 'Supervised',
-                                 'Unimodal', 'Unimodal',
-                                 'Cross-modal\n(with pose)', 'Cross-modal\n(with ECoG)'])
-        sbjs_all = ['EC01', 'EC02', 'EC03', 'EC04', 'EC05', 'EC06',
-                    'EC07', 'EC08', 'EC09', 'EC10', 'EC11', 'EC12']
+        group_labels = np.array(['Cross-modal\n(with pose)', 'Cross-modal\n(with ECoG)'])
+        # group_labels = np.array(['Supervised', 'Supervised',
+        #                          'Unimodal', 'Unimodal',
+        #                          'Cross-modal\n(with pose)', 'Cross-modal\n(with ECoG)'])
+        sbjs_all = ['EC01']#, 'EC02', 'EC03', 'EC04', 'EC05', 'EC06',
+                    #'EC07', 'EC08', 'EC09', 'EC10', 'EC11', 'EC12']
     elif dataset == 'eeg_arm':
         n_cls = 2
         row_labels = ['EEG ', 'Pose ']
