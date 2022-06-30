@@ -4,8 +4,28 @@ import xarray as xr
 
 lp = '/data2/users/kperks/'
 sp = 'ecog_center_out/'
-input_file = 'prep_data_lfp_mocap.npy'
-out_sbj_id = 'BEIG0414'
+# input_file = 'prep_data_lfp_mocap.npy'
+# out_sbj_id = 'BEIG0414'
+# input_file = 'prep_data_lfp_polar.npy'
+# out_sbj_id = 'BEIG0414a'
+# input_file = 'prep_data_lfp_posvel.npy'
+# out_sbj_id = 'BEIG0414b'
+
+# input_file = 'new_data_lfp_mocap.npy'
+# out_sbj_id = 'BEIG0414c' # 3d position with outlier trials removed
+# input_file = 'new_data_lfp_mocap.npy'
+# out_sbj_id = 'BEIG0414d' # 2d position (xy) with outlier trials removed
+
+# input_file = 'new_data_lfp_polar.npy'
+# out_sbj_id = 'BEIG0414e'
+# input_file = 'new_data_lfp_posvel.npy'
+# out_sbj_id = 'BEIG0414f'
+
+# input_file = 'new_data_lfp_mocap_rot.npy'
+# out_sbj_id = 'BEIG0414g'
+input_file = 'new_data_lfp_polar_rot.npy'
+out_sbj_id = 'BEIG0414h'
+
 
 if not os.path.exists(lp+sp):
     os.mkdir(lp+sp)
@@ -17,6 +37,7 @@ data = np.load(lp+input_file, allow_pickle=True)
 data = data.item()
 ecog = data['lfp']
 pose = data['mocap']
+# pose = data['mocap'][:,1:,:] # 2d position (xy)
 recording_day = data['events']
 times = data['time']
 
