@@ -145,6 +145,7 @@ def optimize(o_lst):
             for _i in range(N):
                 o_curr.L[nh, _i] = _i % o_curr.outs[nh]
             o_curr.L[nh] = np.random.permutation(o_curr.L[nh])
+            # print(o_curr.L,flush=True)
         o_curr.L = torch.LongTensor(o_curr.L).to(o_curr.dev)
 
     # Perform optmization ###############################################################
@@ -245,15 +246,19 @@ def model_acc(model_in, data_loader, sklsvm_in=None, meas='acc', D=None):
         model_in.eval()
         
         preds_all, true_all = [], []
+        joint_prob = []
         for X, Y, ind in data_loader:
             X_curr = X.to("cuda")
-            predictions = F.softmax(model_in(X_curr), dim=1)
+            softmax_input = model_in(X_curr) # last latent representation
+            predictions = F.softmax(softmax_input, dim=1) # model classification
             _, pred = predictions.topk(1, 1, True, True)
             p_curr = pred.t().cpu().detach().numpy().tolist()[0]
             preds_all.extend(p_curr)
             true_all.extend(Y.detach().numpy().tolist())
+            joint_prob.extend(softmax_input.to("cpu").numpy())
         preds_all = np.asarray(preds_all)
         true_all = np.asarray(true_all)
+        joint_prob = np.asarray(joint_prob)
     
     if meas == 'acc':
         acc, sklsvm_in, D_out = clust_acc(true_all,preds_all,sklsvm_in, D)
@@ -261,13 +266,17 @@ def model_acc(model_in, data_loader, sklsvm_in=None, meas='acc', D=None):
     elif meas == 'homogsc':
         return homogeneity_score(true_all,preds_all), None, None
     elif meas == 'completesc':
-        return homogeneity_score(true_all,preds_all), None, None
+        return homogeneity_score(true_all,preds_all), None, None # TODO: should be completeness_score ?
     elif meas == 'vscore':
         return v_measure_score(true_all,preds_all), None, None
     elif meas == 'adjmi':
         return adjusted_mutual_info_score(true_all,preds_all), None, None
     elif meas == 'adjrandsc':
         return adjusted_rand_score(true_all,preds_all), None, None
+    elif meas == 'predictions':
+        return true_all, preds_all, None
+    elif meas == 'jointprob':
+        return joint_prob, None, None
         
 def clust_acc(y_true, y_pred, ind=None, D=None):
     y_true = y_true.astype(np.int64)
@@ -360,6 +369,7 @@ if __name__ == "__main__":
                                        n_chans_all=140, test_day=None,
                                        tlim=[args_lst[i].t_min, args_lst[i].t_max])
         X1[np.isnan(X1)] = 0 # set all NaN's to 0
+        print(X1.shape, flush=True)
         y1 -= y1.min()
         y1 = y1.astype('int')
         
@@ -384,10 +394,31 @@ if __name__ == "__main__":
         splits = sss.split(X[0], y[0])
     accs = np.zeros((n_modalities, n_folds, 2))  # n_modalities x n_folds x [train, val]
     n_cls = len(np.unique(y[0]))
+    print(y[0])
     
     homogsc, completesc, vscore, adjmi, adjrandsc = accs.copy(), accs.copy(), accs.copy(), accs.copy(), accs.copy()
+
+    train_split, test_split = [], []
+    # USED IN RUN 11 ONWARDS
+    true_train, pred_train = [], [] # n_folds x n_modalities x trial
+    true_test, pred_test = [], []
+     # USED IN RUN 13 ONWARDS
+    prob_train, prob_test = [], [] # n_folds x n_modalities x trial x n_classes
+
+    # USED IN RUN 6-10
+    # true_train, pred_train = np.zeros((n_modalities, n_folds, 446)), np.zeros((n_modalities, n_folds, 446)) # n_modalities x n_folds x trial
+    # true_test, pred_test = np.zeros((n_modalities, n_folds, 49)), np.zeros((n_modalities, n_folds, 49)) # n_modalities x n_folds x trial
+
     for i, inds in enumerate(splits):
         train_inds, test_inds = inds
+        train_split.append(train_inds)
+        test_split.append(test_inds)
+
+        true_train_fold, pred_train_fold = np.zeros((n_modalities, len(train_inds))), np.zeros((n_modalities, len(train_inds)))
+        true_test_fold, pred_test_fold = np.zeros((n_modalities, len(test_inds))), np.zeros((n_modalities, len(test_inds)))
+
+        prob_train_fold = np.zeros((n_modalities, len(train_inds), args.ncl))
+        prob_test_fold = np.zeros((n_modalities, len(test_inds), args.ncl))
         
         # Standardize data and create dataloader
         scalings = 'median'
@@ -424,7 +455,7 @@ if __name__ == "__main__":
         o_models = optimize(o_lst)
 
         # Compute model train/test accuracy
-        for j, o_curr in enumerate(o_lst): # TODO: why o_lst, not o_models?
+        for j, o_curr in enumerate(o_lst):
             accs[j, i, 0], D_curr, sklsvm_in_curr = model_acc(o_curr.model, train_loader[j])
             accs[j, i, 1], _, _ = model_acc(o_curr.model, test_loader[j], sklsvm_in_curr, D=D_curr)
 
@@ -438,8 +469,45 @@ if __name__ == "__main__":
             adjmi[j, i, 1], _, _ = model_acc(o_curr.model, test_loader[j], meas='adjmi')
             adjrandsc[j, i, 0], _, _ = model_acc(o_curr.model, train_loader[j], meas='adjrandsc')
             adjrandsc[j, i, 1], _, _ = model_acc(o_curr.model, test_loader[j], meas='adjrandsc')
+
+            # Save out model predictions
+            true_train_curr, pred_train_curr, _ = model_acc(o_curr.model, train_loader[j], meas='predictions')
+            true_test_curr, pred_test_curr, _ = model_acc(o_curr.model, test_loader[j], meas='predictions')
+
+            # Save out model joint probabilities
+            prob_train_curr, _, _ = model_acc(o_curr.model, train_loader[j], meas='jointprob')
+            prob_test_curr, _, _ = model_acc(o_curr.model, test_loader[j], meas='jointprob')
+
+            true_train_fold[j,:] = true_train_curr
+            pred_train_fold[j,:] = pred_train_curr
+            true_test_fold[j,:] = true_test_curr
+            pred_test_fold[j,:] = pred_test_curr
+            prob_train_fold[j,...] = prob_train_curr
+            prob_test_fold[j,...] = prob_test_curr
+
+            # USED IN RUN 6-10
+            # if true_train_curr.shape[0] == 446:
+            #     print('OPTION 1')
+            #     true_train[j, i, :] = true_train_curr
+            #     pred_train[j, i, :] = pred_train_curr
+            #     true_test[j, i, :] = true_test_curr[:49]
+            #     pred_test[j, i, :] = pred_test_curr[:49]
+            # elif true_train_curr.shape[0] == 447:
+            #     print('OPTION 2')
+            #     true_train[j, i, :] = true_train_curr[:446]
+            #     pred_train[j, i, :] = pred_train_curr[:446]
+            #     true_test[j, i, :] = true_test_curr
+            #     pred_test[j, i, :] = pred_test_curr
+
             del sklsvm_in_curr
         del o_lst
+        true_train.append(true_train_fold)
+        pred_train.append(pred_train_fold)
+        true_test.append(true_test_fold)
+        pred_test.append(pred_test_fold)
+        prob_train.append(prob_train_fold)
+        prob_test.append(prob_test_fold)
+
 
     if not os.path.exists(args.savepath):
         os.mkdir(args.savepath)
@@ -449,6 +517,12 @@ if __name__ == "__main__":
     np.save(args.savepath + '/' + args.pat_id+'_vscore.npy', vscore.mean(1))
     np.save(args.savepath + '/' + args.pat_id+'_adjmi.npy', adjmi.mean(1))
     np.save(args.savepath + '/' + args.pat_id+'_adjrandsc.npy', adjrandsc.mean(1))
+    np.save(args.savepath + '/' + args.pat_id+'_preds.npy', dict(
+        train_split=train_split, test_split=test_split, true_train=true_train, pred_train=pred_train, true_test=true_test, pred_test=pred_test
+    ))
+    np.save(args.savepath + '/' + args.pat_id+'_probs.npy', dict(
+        train_split=train_split, test_split=test_split, prob_train=prob_train, prob_test=prob_test
+    ))
     
     for i in range(n_modalities):
         pickle.dump(params[i], open(args.savepath + '/' + args.pat_id+'_params{}.pkl'.format(i), 'wb'))
