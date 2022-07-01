@@ -246,19 +246,24 @@ def model_acc(model_in, data_loader, sklsvm_in=None, meas='acc', D=None):
         model_in.eval()
         
         preds_all, true_all = [], []
-        joint_prob = []
+        joint_prob, joint_prob2 = [], []
         for X, Y, ind in data_loader:
             X_curr = X.to("cuda")
-            softmax_input = model_in(X_curr) # last latent representation
-            predictions = F.softmax(softmax_input, dim=1) # model classification
-            _, pred = predictions.topk(1, 1, True, True)
-            p_curr = pred.t().cpu().detach().numpy().tolist()[0]
+            softmax_input = model_in(X_curr)
+            predictions = F.softmax(softmax_input, dim=1) # last latent representation (joint probabilities)
+            _, pred = predictions.topk(1, 1, True, True) # model classification
+            p_curr = pred.t().cpu().detach().numpy().tolist()[0] # len(p_curr) = 36
             preds_all.extend(p_curr)
             true_all.extend(Y.detach().numpy().tolist())
             joint_prob.extend(softmax_input.to("cpu").numpy())
+            joint_prob2.extend(predictions.to("cpu").numpy())
+            # print(type(predictions), predictions.shape, flush=True) # <class 'torch.Tensor'> torch.Size([36, 8])
+            # print(type(predictions.to("cpu").numpy()), predictions.to("cpu").numpy().shape, flush=True) # <class 'numpy.ndarray'> (36, 8)        
+
         preds_all = np.asarray(preds_all)
         true_all = np.asarray(true_all)
         joint_prob = np.asarray(joint_prob)
+        joint_prob2 = np.asarray(joint_prob2)
     
     if meas == 'acc':
         acc, sklsvm_in, D_out = clust_acc(true_all,preds_all,sklsvm_in, D)
@@ -276,7 +281,7 @@ def model_acc(model_in, data_loader, sklsvm_in=None, meas='acc', D=None):
     elif meas == 'predictions':
         return true_all, preds_all, None
     elif meas == 'jointprob':
-        return joint_prob, None, None
+        return joint_prob, joint_prob2, None
         
 def clust_acc(y_true, y_pred, ind=None, D=None):
     y_true = y_true.astype(np.int64)
@@ -366,7 +371,7 @@ if __name__ == "__main__":
     n_modalities = len(args_lst)
     for i in range(n_modalities):
         X1, y1, _, _, _, _ = load_data(args_lst[i].pat_id, args_lst[i].imagenet_path,
-                                       n_chans_all=140, test_day=None,
+                                       n_chans_all=256, test_day=None,
                                        tlim=[args_lst[i].t_min, args_lst[i].t_max])
         X1[np.isnan(X1)] = 0 # set all NaN's to 0
         print(X1.shape, flush=True)
@@ -404,6 +409,7 @@ if __name__ == "__main__":
     true_test, pred_test = [], []
      # USED IN RUN 13 ONWARDS
     prob_train, prob_test = [], [] # n_folds x n_modalities x trial x n_classes
+    prob_train2, prob_test2 = [], []
 
     # USED IN RUN 6-10
     # true_train, pred_train = np.zeros((n_modalities, n_folds, 446)), np.zeros((n_modalities, n_folds, 446)) # n_modalities x n_folds x trial
@@ -419,6 +425,9 @@ if __name__ == "__main__":
 
         prob_train_fold = np.zeros((n_modalities, len(train_inds), args.ncl))
         prob_test_fold = np.zeros((n_modalities, len(test_inds), args.ncl))
+
+        prob_train_fold2 = prob_train_fold.copy()
+        prob_test_fold2 = prob_test_fold.copy()
         
         # Standardize data and create dataloader
         scalings = 'median'
@@ -475,15 +484,18 @@ if __name__ == "__main__":
             true_test_curr, pred_test_curr, _ = model_acc(o_curr.model, test_loader[j], meas='predictions')
 
             # Save out model joint probabilities
-            prob_train_curr, _, _ = model_acc(o_curr.model, train_loader[j], meas='jointprob')
-            prob_test_curr, _, _ = model_acc(o_curr.model, test_loader[j], meas='jointprob')
+            prob_train_curr, prob_train_curr2, _ = model_acc(o_curr.model, train_loader[j], meas='jointprob')
+            prob_test_curr, prob_test_curr2, _ = model_acc(o_curr.model, test_loader[j], meas='jointprob')
 
             true_train_fold[j,:] = true_train_curr
             pred_train_fold[j,:] = pred_train_curr
             true_test_fold[j,:] = true_test_curr
             pred_test_fold[j,:] = pred_test_curr
+
             prob_train_fold[j,...] = prob_train_curr
             prob_test_fold[j,...] = prob_test_curr
+            prob_train_fold2[j,...] = prob_train_curr2
+            prob_test_fold2[j,...] = prob_test_curr2
 
             # USED IN RUN 6-10
             # if true_train_curr.shape[0] == 446:
@@ -505,9 +517,11 @@ if __name__ == "__main__":
         pred_train.append(pred_train_fold)
         true_test.append(true_test_fold)
         pred_test.append(pred_test_fold)
+
         prob_train.append(prob_train_fold)
         prob_test.append(prob_test_fold)
-
+        prob_train2.append(prob_train_fold2)
+        prob_test2.append(prob_test_fold2)
 
     if not os.path.exists(args.savepath):
         os.mkdir(args.savepath)
@@ -521,7 +535,7 @@ if __name__ == "__main__":
         train_split=train_split, test_split=test_split, true_train=true_train, pred_train=pred_train, true_test=true_test, pred_test=pred_test
     ))
     np.save(args.savepath + '/' + args.pat_id+'_probs.npy', dict(
-        train_split=train_split, test_split=test_split, prob_train=prob_train, prob_test=prob_test
+        train_split=train_split, test_split=test_split, softmax_input_train=prob_train, softmax_input_test=prob_test, softmax_output_train=prob_train2, softmax_output_test=prob_test2
     ))
     
     for i in range(n_modalities):

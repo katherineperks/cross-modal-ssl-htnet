@@ -118,6 +118,7 @@ def return_model_loader(args, return_loader=True):
         model = models.__dict__[args.arch](num_classes=outs)
     elif args.arch in ['htnet','htnet_pose','htnet_rnn']:
         Chans,Samples = train_loader.dataset.__getitem__(0)[0].shape
+        print(Chans,Samples,flush=True)
         model, params = models.__dict__[args.arch](num_classes=outs, Chans=Chans, Samples=Samples,
                                            use_ecog = args.use_ecog, is_supervised = args.is_supervised,
                                            cont_data = args.cont_data, param_lp=args.param_lp)
@@ -246,7 +247,7 @@ def get_htnet_data_loader(data_dir, dat_type='train',
 class NeuralDataset(torch.utils.data.Dataset):
     '''Data loader class (currently loads in all data at once; may want to change this for larger datasets)'''
     def __init__(self, lp, dat_type='train', rand_seed = 1337, pat_id = 'EC01',
-                 tlim = [-1,1], n_chans_all = 140, n_folds = 3,
+                 tlim = [-1,1], n_chans_all = 256, n_folds = 3,
                  curr_fold = 0, n_states = 2, data_srate = 250, len_eps = 3,
                  rescale_rate = 0, use_ecog=True):
         self.dat_type = dat_type
