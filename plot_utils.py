@@ -16,7 +16,8 @@ def load_dataset_params(dataset):
         group_labels = np.array(['Supervised', 'Supervised',
                                  'Unimodal', 'Unimodal',
                                  'Cross-modal\n(with pose)', 'Cross-modal\n(with ECoG)'])
-        sbjs_all = ['BEIG0414','BEIG0414a','BEIG0414b']
+        sbjs_all = ['BEIG0414c', 'BEIG0414g']
+        # sbjs_all = ['BEIG0414','BEIG0414a','BEIG0414b']
     elif dataset == 'eeg_balance':
         n_cls = 4
         row_labels = ['EEG ', 'Pose ', 'EMG ']
@@ -225,8 +226,8 @@ def comput_meas_table(measure, subfolders_d, dataset, sbjs_all, rootpth=None, da
         inds_pose = np.array([1, 4, 7])
         inds_emg = np.array([2, 5, 8])
     else:
-        inds_neur = np.array([0, 2, 4])
-        inds_pose = np.array([1, 3, 5])
+        inds_neur = np.array([0, 2])
+        inds_pose = np.array([1, 3])
     group_labs_neur = group_labels[inds_neur]
     group_labs_pose = group_labels[inds_pose]
     xticks_sbj = ['P'+str(val+1).zfill(2) for val in range(len(sbjs_all))]
@@ -291,8 +292,8 @@ def obtain_dfs(subfolders, sbjs_all, n_modspair, group_labels, dataset,
         inds_pose = np.array([1, 4, 7])
         inds_emg = np.array([2, 5, 8])
     else:
-        inds_neur = np.array([0, 2, 4])
-        inds_pose = np.array([1, 3, 5])
+        inds_neur = np.array([0, 2])
+        inds_pose = np.array([1, 3])
     group_labs_neur = group_labels[inds_neur]
     group_labs_pose = group_labels[inds_pose]
     xticks_sbj = ['P'+str(val+1).zfill(2) for val in range(len(sbjs_all))]
